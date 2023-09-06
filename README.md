@@ -12,6 +12,9 @@
 - Validate response code and response message.
 - Validate absence of duplicate Ids.
 - Validate searching with 'Firstname' only as optional parameter.
+- Validate searching with 'Lastname' only as optional parameter.
+- Validate searching with 'Firstname', 'Lastname', 'Checkin' and 'Checkout' as optional parameter.
+
 
 ### GetBooking
 
@@ -26,6 +29,7 @@
 - Validate header.
 - Validate response code and response message.
 - Validate creation of booking with invalid data type in every field.
+- Validate creation of booking with valid data.
 
 ### UpdateBooking
 - Validate updating all fields with valid values.
