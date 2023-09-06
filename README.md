@@ -13,6 +13,7 @@
 - Validate absence of duplicate Ids.
 - Validate searching with 'Firstname' only as optional parameter.
 - Validate searching with 'Lastname' only as optional parameter.
+- Validate searching with 'Firstname' and 'Lastname' as optional parameter.
 - Validate searching with 'Firstname', 'Lastname', 'Checkin' and 'Checkout' as optional parameter.
 
 
@@ -42,5 +43,11 @@
 - Validate partial updating with invalid field values.
 
 ### DeleteBooking
--
+- Validate deleting a booking without sending any ID.
+- Validate deleting a booking with an invalid ID.
+- Validate deleting a booking with valid ID.
+- Validate deleting a booking twice.
 
+### Ping
+- Validate response code and response message.
+  
