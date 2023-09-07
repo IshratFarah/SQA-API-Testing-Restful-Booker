@@ -1,0 +1,12 @@
+Iteration_No,Checkin,Checkout,Remarks
+1,2022-01-01,2022-01-05,valid
+2,,,empty
+3,abcd,1234,invalid data type
+4,abc-01-01,2022-01-05,invalid data type in year
+5,2022-ab-01,2022-01-05,invalid data type in month
+6,2022-01-a,2022-01-05,invalid data type in day
+7,01-01-2022,05-01-2022,uncompatible format
+8,2050-01-01,2050-01-05,invalid year
+9,2022-13-01,2022-13-05,invalid month
+10,2022-01-32,2022-01-35,invalid day
+11,2022-02-01,2022-01-01,checkin after checkout

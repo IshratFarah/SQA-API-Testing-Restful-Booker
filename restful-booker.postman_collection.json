@@ -22,27 +22,50 @@
 									"\r",
 									"// Validate Header\r",
 									"\r",
-									"pm.test(\"Content-Type header is present\", () => {\r",
-									"  pm.response.to.have.header(\"Content-Type\");\r",
-									"});\r",
-									"\r",
 									"pm.test(\"Content-Type header is application/json\", () => {\r",
-									"  pm.expect(pm.response.headers.get('Content-Type')).to.eql('application/json; charset=utf-8');\r",
+									"    pm.expect(pm.request.headers.get('Content-Type')).to.eql('application/json');\r",
+									"});\r",
+									"\r",
+									"// Validate Response Code\r",
+									"\r",
+									"var code = pm.response.code;\r",
+									"\r",
+									"switch (code) {\r",
+									"    case 200:\r",
+									"        pm.test(\"Response code is 200\", function () {\r",
+									"            pm.response.to.have.status(200);\r",
+									"        });\r",
+									"        break;\r",
+									"\r",
+									"    case 400:\r",
+									"        pm.test(\"HTTP Error 400 : Bad request\");\r",
+									"        break;\r",
+									"}\r",
+									"\r",
+									"\r",
+									"// Validate Response Message\r",
+									"\r",
+									"pm.test(\"Response message is OK\", function () {\r",
+									"    pm.response.to.have.status(\"OK\");\r",
 									"});\r",
 									"\r",
 									"\r",
-									"// Validate Response code \r",
+									"// Validate Response Token\r",
 									"\r",
-									"pm.test(\"Status code is 200\", function () {\r",
-									"    pm.response.to.have.status(200);\r",
+									"var flagToken = 0;\r",
+									"\r",
+									"pm.test(\"Body contains token.\", function () {\r",
+									"    pm.expect(jsonData.token.length > 0);\r",
+									"    flagToken = 1;\r",
 									"});\r",
 									"\r",
+									"if (flagToken == 1) {\r",
+									"    pm.test(\"Token data type is String\", function(){\r",
+									"        pm.expect(jsonData.token).to.be.a(\"string\");\r",
+									"    })\r",
+									"}\r",
 									"\r",
-									"// Validate Response \r",
 									"\r",
-									"pm.test(\"Body contains token\",() => {\r",
-									"  pm.expect(pm.response.text()).to.include(\"token\");\r",
-									"});\r",
 									"\r",
 									"\r",
 									"\r",
@@ -62,6 +85,8 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
+									"console.log(\"username: \" + pm.iterationData.get(\"username\"),\"password: \" + pm.iterationData.get(\"password\"));\r",
+									"\r",
 									""
 								],
 								"type": "text/javascript"
@@ -78,13 +103,13 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json ",
+								"value": "application/json",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "// // Valid Credentials\r\n\r\n// {\r\n//     \"username\" : \"admin\",\r\n//     \"password\" : \"password123\"\r\n// }\r\n\r\n\r\n// // Invalid Username\r\n\r\n// {\r\n//     \"username\" : \"abc\",\r\n//     \"password\" : \"password123\"\r\n// }\r\n\r\n// // Invalid password\r\n\r\n// {\r\n//     \"username\" : \"admin\",\r\n//     \"password\" : \"123\"\r\n// }\r\n\r\n// // Invalid Credentials\r\n\r\n// {\r\n//     \"username\" : \"abc\",\r\n//     \"password\" : \"123\"\r\n// }\r\n\r\n// Empty Credentials\r\n\r\n{\r\n    \"username\" : \" \",\r\n    \"password\" : \" \"\r\n}"
+							"raw": "{\r\n    \"username\" : \"admin\" ,\r\n    \"password\" : \"password123\"\r\n}\r\n\r\n\r\n// This block is for data from csv\r\n\r\n// {\r\n//     \"username\" : \"{{username}}\" ,\r\n//     \"password\" : \"{{password}}\"\r\n// }\r\n"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth",
@@ -105,736 +130,1979 @@
 			"item": [
 				{
 					"name": "GetBookingIds",
-					"event": [
+					"item": [
 						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
+							"name": "GetBookingIds",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"// Validate Response Code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"\r",
+											"// Validate search without sending any optional parameters\r",
+											"\r",
+											"pm.test(\"Response body is an array of objects with unique booking IDs\", function () {\r",
+											"    pm.expect(jsonData).to.be.an(\"array\");\r",
+											"})\r",
+											"\r",
+											"\r",
+											"\r",
+											"pm.test(\"Check for duplicate values\", function () {\r",
+											"    let bookingIds = [];\r",
+											"    for (i = 0; i < jsonData.length; i++) {\r",
+											"        bookingIds.push(jsonData[i].bookingid);\r",
+											"    }\r",
+											"    pm.expect(bookingIds.length).to.eql(new Set(bookingIds).size);\r",
+											"})\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true,
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									}
 								],
-								"type": "text/javascript"
-							}
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										""
+									]
+								}
+							},
+							"response": []
 						},
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"\r",
-									"// Response code - Status 200\r",
-									"\r",
-									"pm.test(\"Successful GetBookingIds\", function(){\r",
-									"    pm.response.to.have.status(200);\r",
-									"});\r",
-									"\r",
-									"\r",
-									"\r",
-									""
+							"name": "GetBookingId_withFirstName",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"// Validate Response Code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"\r",
+											"// Validate search with Firstname\r",
+											"\r",
+											"var param_firstname = pm.request.url.query.get('firstname');\r",
+											"console.log(param_firstname)\r",
+											"var baseUrl = pm.environment.get(\"baseUrl\")\r",
+											"\r",
+											"pm.test(\"Searching with Firstname only is validated.\", function () {\r",
+											"    \r",
+											"    var flag = 0;\r",
+											"    for (i = 0; i < jsonData.length; i++) {\r",
+											"        flag = 1;\r",
+											"        var test_id = jsonData[i].bookingid;\r",
+											"        console.log(test_id);\r",
+											"        var call_GetBooking = {\r",
+											"            method: 'GET',\r",
+											"            url: `${baseUrl}/booking/${test_id}`,\r",
+											"        };\r",
+											"\r",
+											"        pm.sendRequest(call_GetBooking, function (err, response) {\r",
+											"\r",
+											"            if (err) {\r",
+											"                console.error('Error:', err);\r",
+											"                return;\r",
+											"            }\r",
+											"\r",
+											"            console.log(response.json().firstname);\r",
+											"            pm.expect(response.json().firstname).to.eql(param_firstname) \r",
+											"            \r",
+											"        })\r",
+											"    }\r",
+											"    if (flag == 0){\r",
+											"        pm.expect(response.json().firstname).to.eql(param_firstname)\r",
+											"    }\r",
+											"});\r",
+											"        \r",
+											"\r",
+											"\r",
+											"\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true,
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									}
 								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true,
-						"disabledSystemHeaders": {
-							"accept": true,
-							"content-type": true
-						}
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "firstname",
-									"value": "Monica",
-									"type": "text"
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
 								},
-								{
-									"key": "lastname",
-									"value": "Geller",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "bookingdates[checkin]",
-									"value": "2023-02-01",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "bookingdates[checkout]",
-									"value": "2023-02-03",
-									"type": "text",
-									"disabled": true
+								"url": {
+									"raw": "{{baseUrl}}/booking?firstname={{firstName}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking"
+									],
+									"query": [
+										{
+											"key": "firstname",
+											"value": "Monica",
+											"disabled": true
+										},
+										{
+											"key": "firstname",
+											"value": "{{firstName}}"
+										}
+									]
 								}
-							]
+							},
+							"response": []
 						},
-						"url": {
-							"raw": "{{baseUrl}}/booking",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"booking"
-							],
-							"query": [
+						{
+							"name": "GetBookingId_withLastName",
+							"event": [
 								{
-									"key": "firstname",
-									"value": "Jim",
-									"disabled": true
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
 								},
 								{
-									"key": "lastname",
-									"value": "Brown",
-									"disabled": true
-								},
-								{
-									"key": "checkin",
-									"value": "2018-01-01",
-									"disabled": true
-								},
-								{
-									"key": "checkout",
-									"value": "2019-01-01",
-									"disabled": true
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"// Validate Response Code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"\r",
+											"// Validate search with Lastname\r",
+											"\r",
+											"var param_lastname = pm.request.url.query.get('lastname');\r",
+											"console.log(param_lastname)\r",
+											"var baseUrl = pm.environment.get(\"baseUrl\")\r",
+											"\r",
+											"pm.test(\"Searching with Lastname only is validated.\", function () {\r",
+											"    \r",
+											"    var flag = 0;\r",
+											"    for (i = 0; i < jsonData.length; i++) {\r",
+											"        flag = 1;\r",
+											"        var test_id = jsonData[i].bookingid;\r",
+											"        console.log(test_id);\r",
+											"        var call_GetBooking = {\r",
+											"            method: 'GET',\r",
+											"            url: `${baseUrl}/booking/${test_id}`,\r",
+											"        };\r",
+											"\r",
+											"        pm.sendRequest(call_GetBooking, function (err, response) {\r",
+											"\r",
+											"            if (err) {\r",
+											"                console.error('Error:', err);\r",
+											"                return;\r",
+											"            }\r",
+											"\r",
+											"            console.log(response.json().lastname);\r",
+											"            pm.expect(response.json().lastname).to.eql(param_lastname) \r",
+											"            \r",
+											"        })\r",
+											"    }\r",
+											"    if (flag == 0){\r",
+											"        pm.expect(response.json().lastname).to.eql(param_lastname)\r",
+											"    }\r",
+											"});\r",
+											"        \r",
+											"\r",
+											"\r",
+											"\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true,
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking?lastname={{lastName}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking"
+									],
+									"query": [
+										{
+											"key": "lastname",
+											"value": "{{lastName}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetBookingId_withFirstNameAndLastName",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"// Validate Response Code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"\r",
+											"// Validate search with Firstname\r",
+											"\r",
+											"var param_firstname = pm.request.url.query.get('firstname');\r",
+											"var param_lastname = pm.request.url.query.get('lastname');\r",
+											"\r",
+											"console.log(param_firstname + param_lastname)\r",
+											"var baseUrl = pm.environment.get(\"baseUrl\")\r",
+											"\r",
+											"pm.test(\"Searching with Firstname and Lastname is validated.\", function () {\r",
+											"\r",
+											"    var flag = 0;\r",
+											"    for (i = 0; i < jsonData.length; i++) {\r",
+											"        flag = 1;\r",
+											"        var test_id = jsonData[i].bookingid;\r",
+											"        console.log(test_id);\r",
+											"        var call_GetBooking = {\r",
+											"            method: 'GET',\r",
+											"            url: `${baseUrl}/booking/${test_id}`,\r",
+											"        };\r",
+											"\r",
+											"        pm.sendRequest(call_GetBooking, function (err, response) {\r",
+											"\r",
+											"            if (err) {\r",
+											"                console.error('Error:', err);\r",
+											"                return;\r",
+											"            }\r",
+											"\r",
+											"            console.log(response.json().firstname + response.json().lastname);\r",
+											"            pm.expect(response.json().firstname).to.eql(param_firstname)\r",
+											"            pm.expect(response.json().lastname).to.eql(param_lastname)\r",
+											"\r",
+											"        })\r",
+											"    }\r",
+											"    if (flag == 0) {\r",
+											"        pm.expect(response.json().firstname).to.eql(param_firstname)\r",
+											"        pm.expect(response.json().lastname).to.eql(param_lastname)\r",
+											"\r",
+											"    }\r",
+											"});\r",
+											"\r",
+											"\r",
+											"\r",
+											"\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true,
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking?firstname={{firstName}}&lastname={{lastName}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking"
+									],
+									"query": [
+										{
+											"key": "firstname",
+											"value": "{{firstName}}"
+										},
+										{
+											"key": "lastname",
+											"value": "{{lastName}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetBookingId_withAllOptionalParams",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"console.log(jsonData.length)\r",
+											"// Validate Response Code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"\r",
+											"// Validate searching with Firstname, Lastname, Checkin and Checkout dates\r",
+											"\r",
+											"var param_firstname = pm.request.url.query.get('firstname');\r",
+											"var param_lastname = pm.request.url.query.get('lastname');\r",
+											"var param_checkin = pm.request.url.query.get('bookingdates[checkin]');\r",
+											"var param_checkout = pm.request.url.query.get('bookingdates[checkout]');\r",
+											"\r",
+											"console.log(param_checkin + param_checkout)\r",
+											"var baseUrl = pm.environment.get(\"baseUrl\")\r",
+											"\r",
+											"pm.test(\"Searching with Firstname, Lastname, Checkin and Checkout date is validated.\", function () {\r",
+											"\r",
+											"    var flag = 0;\r",
+											"    for (i = 0; i < jsonData.length; i++) {\r",
+											"        flag = 1;\r",
+											"        var test_id = jsonData[i].bookingid;\r",
+											"        console.log(test_id);\r",
+											"        var call_GetBooking = {\r",
+											"            method: 'GET',\r",
+											"            url: `${baseUrl}/booking/${test_id}`,\r",
+											"        };\r",
+											"\r",
+											"        pm.sendRequest(call_GetBooking, function (err, response) {\r",
+											"\r",
+											"            if (err) {\r",
+											"                console.log(\"error\")\r",
+											"                //console.error('Error:', err);\r",
+											"                return;\r",
+											"            }\r",
+											"\r",
+											"            console.log(response.json().firstname + \" \" + response.json().lastname + \" \" + response.json().bookingdates.checkin + \" \" + response.json().bookingdates.checkout);\r",
+											"            pm.expect(response.json().firstname).to.eql(param_firstname)\r",
+											"            pm.expect(response.json().lastname).to.eql(param_lastname)\r",
+											"            pm.expect(response.json().bookingdates.checkin).to.eql(param_checkin)\r",
+											"            pm.expect(response.json().bookingdates.checkout).to.eql(param_checkout)\r",
+											"\r",
+											"        })\r",
+											"    }\r",
+											"    if (flag == 0) {\r",
+											"        //console.log(\"flag 0\")\r",
+											"        pm.expect(response.json().firstname).to.eql(param_firstname)\r",
+											"        pm.expect(response.json().lastname).to.eql(param_lastname)\r",
+											"        pm.expect(response.json().bookingdates.checkin).to.eql(param_checkin)\r",
+											"        pm.expect(response.json().bookingdates.checkout).to.eql(param_checkout)\r",
+											"\r",
+											"    }\r",
+											"});\r",
+											"\r",
+											"\r",
+											"\r",
+											"\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true,
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": []
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking?firstname={{firstName}}&lastname={{lastName}}&bookingdates[checkin]={{checkin}}&bookingdates[checkout]={{checkout}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking"
+									],
+									"query": [
+										{
+											"key": "firstname",
+											"value": "{{firstName}}"
+										},
+										{
+											"key": "lastname",
+											"value": "{{lastName}}"
+										},
+										{
+											"key": "bookingdates[checkin]",
+											"value": "{{checkin}}"
+										},
+										{
+											"key": "bookingdates[checkout]",
+											"value": "{{checkout}}"
+										}
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
 					"name": "GetBooking",
-					"event": [
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"\r",
-									"\r",
-									"\r",
-									"// // // Validate Header\r",
-									"// // pm.test(\"Accept header is present\", () => {\r",
-									"// //   pm.response.to.have.header(\"Accept\");\r",
-									"// // });\r",
-									"\r",
-									"// // pm.test(\"Accept header is application/json\", () => {\r",
-									"// //   pm.expect(pm.response.headers.get('Accept')).to.eql('application/json');\r",
-									"// // });\r",
-									"\r",
-									"\r",
-									"\r",
-									"// // pm.test(\"Additional needs validation\", function(){\r",
-									"// //     pm.expect(jsonData.additionalneeds).to.eql(\"Smelly Cat\");\r",
-									"// // });\r",
-									"\r",
-									"// // Validate FirstName from Excel\r",
-									"\r",
-									"// pm.test(\"Firstname validation\", function(){\r",
-									"//     pm.expect(jsonData.firstname).to.eql(pm.iterationData.get(\"firstName\"));\r",
-									"// });\r",
-									"\r",
-									"// // Validate LastName from Excel\r",
-									"\r",
-									"// pm.test(\"Lastname validation\", function(){\r",
-									"//     pm.expect(jsonData.lastname).to.eql(pm.iterationData.get(\"lastName\"));\r",
-									"// });\r",
-									"\r",
-									"var code = pm.response.code\r",
-									"// console.log(\"code: \" + code)\r",
-									"console.log(pm.response.code)\r",
-									"\r",
-									"switch (code) {\r",
-									"    case 200:\r",
-									"        var jsonData = pm.response.json();\r",
-									"        console.log(\"code: \" + code)\r",
-									"        //Validate FirstName from Environment\r",
-									"        pm.test(\"Firstname validation\", function () {\r",
-									"            pm.expect(jsonData.firstname).to.eql(pm.environment.get(\"firstName\"));\r",
-									"        })\r",
-									"\r",
-									"        // Validate LastName from Environment\r",
-									"        pm.test(\"Lastname validation\", function () {\r",
-									"            pm.expect(jsonData.lastname).to.eql(pm.environment.get(\"lastName\"));\r",
-									"        })\r",
-									"\r",
-									"        pm.test(\"Total price validation\", function () {\r",
-									"            pm.expect(jsonData.totalprice).to.eql(1000);\r",
-									"        })\r",
-									"\r",
-									"        pm.test(\"Deposit paid validation\", function () {\r",
-									"            pm.expect(jsonData.depositpaid).to.eql(true);\r",
-									"        })\r",
-									"\r",
-									"        //Validate Checkin Date from Environment\r",
-									"\r",
-									"        pm.test(\"Checkin validation\", function () {\r",
-									"            pm.expect(jsonData.bookingdates.checkin).to.eql(pm.environment.get(\"checkin\"));\r",
-									"        })\r",
-									"\r",
-									"\r",
-									"        // Validate Checkout Date from Environment\r",
-									"        pm.test(\"Checkout validation\", function () {\r",
-									"            pm.expect(jsonData.bookingdates.checkout).to.eql(pm.environment.get(\"checkout\"));\r",
-									"        })\r",
-									"        break;\r",
-									"\r",
-									"    case 404:\r",
-									"        // console.log(\"code: \" + code)\r",
-									"        pm.test(\"Something went wrong!\")\r",
-									"        \r",
-									"    \r",
-									"}\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true,
-						"disabledSystemHeaders": {
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": []
-						},
-						"url": {
-							"raw": "{{baseUrl}}/booking/{{id}}",
-							"host": [
-								"{{baseUrl}}"
+							"name": "GetBooking_environmentID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(pm.environment.get(\"id\"));\r",
+											"\r",
+											"// Validate Header\r",
+											"\r",
+											"pm.test(\"Accept header is application/json\", () => {\r",
+											"    pm.expect(pm.request.headers.get('Accept')).to.eql('application/json');\r",
+											"});\r",
+											"\r",
+											"// Validate Response code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Schema\r",
+											"\r",
+											"var schema =\r",
+											"{\r",
+											"    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\r",
+											"    \"title\": \"Generated schema for Root\",\r",
+											"    \"type\": \"object\",\r",
+											"    \"properties\": {\r",
+											"        \"firstname\": {\r",
+											"            \"type\": \"string\"\r",
+											"        },\r",
+											"        \"lastname\": {\r",
+											"            \"type\": \"string\"\r",
+											"        },\r",
+											"        \"totalprice\": {\r",
+											"            \"type\": \"number\"\r",
+											"        },\r",
+											"        \"depositpaid\": {\r",
+											"            \"type\": \"boolean\"\r",
+											"        },\r",
+											"        \"bookingdates\": {\r",
+											"            \"type\": \"object\",\r",
+											"            \"properties\": {\r",
+											"                \"checkin\": {\r",
+											"                    \"type\": \"string\"\r",
+											"                },\r",
+											"                \"checkout\": {\r",
+											"                    \"type\": \"string\"\r",
+											"                }\r",
+											"            },\r",
+											"            \"required\": [\r",
+											"                \"checkin\",\r",
+											"                \"checkout\"\r",
+											"            ]\r",
+											"        },\r",
+											"        \"additionalneeds\": {\r",
+											"            \"type\": \"string\"\r",
+											"        }\r",
+											"    },\r",
+											"    \"required\": [\r",
+											"        \"firstname\",\r",
+											"        \"lastname\",\r",
+											"        \"totalprice\",\r",
+											"        \"depositpaid\",\r",
+											"        \"bookingdates\",\r",
+											"        \"additionalneeds\"\r",
+											"    ]\r",
+											"}\r",
+											"\r",
+											"pm.test('Schema is valid', function () {\r",
+											"    pm.response.to.have.jsonSchema(schema)\r",
+											"});\r",
+											"\r",
+											"// Validate field values\r",
+											"\r",
+											"var code = pm.response.code\r",
+											"console.log(\"Response code: \" + code)\r",
+											"\r",
+											"if (code == 200) {\r",
+											"    var jsonData = pm.response.json();\r",
+											"\r",
+											"    //Validate FirstName from Environment\r",
+											"    pm.test(\"Firstname validation\", function () {\r",
+											"        pm.expect(jsonData.firstname).to.eql(pm.environment.get(\"firstName\"));\r",
+											"    })\r",
+											"\r",
+											"    // Validate LastName from Environment\r",
+											"    pm.test(\"Lastname validation\", function () {\r",
+											"        pm.expect(jsonData.lastname).to.eql(pm.environment.get(\"lastName\"));\r",
+											"    })\r",
+											"\r",
+											"    pm.test(\"Total price validation\", function () {\r",
+											"        pm.expect(jsonData.totalprice).to.eql(9999);\r",
+											"    })\r",
+											"\r",
+											"    pm.test(\"Deposit paid validation\", function () {\r",
+											"        pm.expect(jsonData.depositpaid).to.eql(false);\r",
+											"    })\r",
+											"\r",
+											"    //Validate Checkin Date from Environment\r",
+											"\r",
+											"    pm.test(\"Checkin validation\", function () {\r",
+											"        pm.expect(jsonData.bookingdates.checkin).to.eql(pm.environment.get(\"checkin\"));\r",
+											"    })\r",
+											"\r",
+											"\r",
+											"    // Validate Checkout Date from Environment\r",
+											"    pm.test(\"Checkout validation\", function () {\r",
+											"        pm.expect(jsonData.bookingdates.checkout).to.eql(pm.environment.get(\"checkout\"));\r",
+											"    })\r",
+											"\r",
+											"    pm.test(\"Additional needs validation\", function () {\r",
+											"        pm.expect(jsonData.additionalneeds).to.eql(\"Snacks\");\r",
+											"    })\r",
+											"\r",
+											"}\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
 							],
-							"path": [
-								"booking",
-								"{{id}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CreateBooking_JSON",
-					"event": [
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
 						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// FirstName creation using Dynamic Variables\r",
-									"\r",
-									"var firstName = pm.variables.replaceIn(\"{{$randomFirstName}}\")\r",
-									"console.log(\"First Name: \"+ firstName)\r",
-									"pm.environment.set(\"firstName\",firstName)\r",
-									"\r",
-									"\r",
-									"// LastName creation using Postman Dynamic Variables\r",
-									"\r",
-									"var lastName = pm.variables.replaceIn(\"{{$randomLastName}}\")\r",
-									"console.log(\"Last Name: \"+ lastName)\r",
-									"pm.environment.set(\"lastName\",lastName)\r",
-									"\r",
-									"\r",
-									"// Date generation using js library\r",
-									"\r",
-									"const moment = require('moment')\r",
-									"const today = moment()\r",
-									"\r",
-									"pm.environment.set(\"checkin\",today.format(\"YYYY-MM-DD\"))\r",
-									"pm.environment.set(\"checkout\",today.add(4, 'day').format(\"YYYY-MM-DD\"))\r",
-									"\r",
-									""
+							"name": "GetBooking_invalidID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(pm.environment.get(\"id\"));\r",
+											"\r",
+											"// Validate Header\r",
+											"\r",
+											"pm.test(\"Accept header is present\", () => {\r",
+											"    pm.request.to.have.header(\"Accept\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Accept header is application/json\", () => {\r",
+											"    pm.expect(pm.request.headers.get('Accept')).to.eql('application/json');\r",
+											"});\r",
+											"\r",
+											"// Validate Response code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
 								],
-								"type": "text/javascript"
-							}
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/abcd",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"abcd"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "CreateBooking",
+					"item": [
+						{
+							"name": "CreateBooking_with_envVar",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// FirstName creation using Dynamic Variables\r",
+											"\r",
+											"var firstName = pm.variables.replaceIn(\"{{$randomFirstName}}\")\r",
+											"console.log(\"First Name: \"+ firstName)\r",
+											"pm.environment.set(\"firstName\",firstName)\r",
+											"\r",
+											"\r",
+											"// LastName creation using Postman Dynamic Variables\r",
+											"\r",
+											"var lastName = pm.variables.replaceIn(\"{{$randomLastName}}\")\r",
+											"console.log(\"Last Name: \"+ lastName)\r",
+											"pm.environment.set(\"lastName\",lastName)\r",
+											"\r",
+											"\r",
+											"// Date generation using js library\r",
+											"\r",
+											"const moment = require('moment')\r",
+											"const today = moment()\r",
+											"\r",
+											"pm.environment.set(\"checkin\",today.format(\"YYYY-MM-DD\"))\r",
+											"pm.environment.set(\"checkout\",today.add(4, 'day').format(\"YYYY-MM-DD\"))\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"pm.environment.set(\"id\",jsonData.bookingid);\r",
+											"\r",
+											"// Validate Header\r",
+											"\r",
+											"pm.test(\"Content-Type header is application/json\", () => {\r",
+											"    pm.expect(pm.request.headers.get('Content-Type')).to.eql('application/json');\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Accept header is application/json\", () => {\r",
+											"    pm.expect(pm.request.headers.get('Accept')).to.eql('application/json');\r",
+											"});\r",
+											"\r",
+											"// Validate Response Code\r",
+											"\r",
+											"pm.test(\"Response code is 200\", function(){\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											"\r",
+											"// Validate Schema\r",
+											"\r",
+											"var schema =\r",
+											"{\r",
+											"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+											"  \"type\": \"object\",\r",
+											"  \"properties\": {\r",
+											"    \"bookingid\": {\r",
+											"      \"type\": \"integer\"\r",
+											"    },\r",
+											"    \"booking\": {\r",
+											"      \"type\": \"object\",\r",
+											"      \"properties\": {\r",
+											"        \"firstname\": {\r",
+											"          \"type\": \"string\"\r",
+											"        },\r",
+											"        \"lastname\": {\r",
+											"          \"type\": \"string\"\r",
+											"        },\r",
+											"        \"totalprice\": {\r",
+											"          \"type\": \"integer\"\r",
+											"        },\r",
+											"        \"depositpaid\": {\r",
+											"          \"type\": \"boolean\"\r",
+											"        },\r",
+											"        \"bookingdates\": {\r",
+											"          \"type\": \"object\",\r",
+											"          \"properties\": {\r",
+											"            \"checkin\": {\r",
+											"              \"type\": \"string\"\r",
+											"            },\r",
+											"            \"checkout\": {\r",
+											"              \"type\": \"string\"\r",
+											"            }\r",
+											"          },\r",
+											"          \"required\": [\r",
+											"            \"checkin\",\r",
+											"            \"checkout\"\r",
+											"          ]\r",
+											"        },\r",
+											"        \"additionalneeds\": {\r",
+											"          \"type\": \"string\"\r",
+											"        }\r",
+											"      },\r",
+											"      \"required\": [\r",
+											"        \"firstname\",\r",
+											"        \"lastname\",\r",
+											"        \"totalprice\",\r",
+											"        \"depositpaid\",\r",
+											"        \"bookingdates\",\r",
+											"        \"additionalneeds\"\r",
+											"      ]\r",
+											"    }\r",
+											"  },\r",
+											"  \"required\": [\r",
+											"    \"bookingid\",\r",
+											"    \"booking\"\r",
+											"  ]\r",
+											"}\r",
+											"\r",
+											"pm.test('Schema is valid', function() {\r",
+											"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+											"});\r",
+											"\r",
+											"// Validate First Name \r",
+											"\r",
+											"pm.test(\"Firstname creation is validated\",function(){\r",
+											"    pm.expect(jsonData.booking.firstname).to.eql(pm.environment.get(\"firstName\"));\r",
+											"});\r",
+											"\r",
+											"\r",
+											"// Validate Last Name\r",
+											"\r",
+											"pm.test(\"Lastname creation is validated\",function(){\r",
+											"    pm.expect(jsonData.booking.lastname).to.eql(pm.environment.get(\"lastName\"));\r",
+											"});\r",
+											"\r",
+											"// Validate Checkin Date\r",
+											"\r",
+											"pm.test(\"Checkin date creation is validated\",function(){\r",
+											"    pm.expect(jsonData.booking.bookingdates.checkin).to.eql(pm.environment.get(\"checkin\"));\r",
+											"});\r",
+											"\r",
+											"// Validate Checkout Date\r",
+											"\r",
+											"pm.test(\"Checkout date creation is validated\",function(){\r",
+											"    pm.expect(jsonData.booking.bookingdates.checkout).to.eql(pm.environment.get(\"checkout\"));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"firstname\" : \"{{firstName}}\",\r\n    \"lastname\" : \"{{lastName}}\",\r\n    \"totalprice\" : 9999,\r\n    \"depositpaid\" : false,\r\n    \"bookingdates\" : {\r\n        \"checkin\" : \"{{checkin}}\",\r\n        \"checkout\" : \"{{checkout}}\"\r\n    },\r\n    \"additionalneeds\" : \"Snacks\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking"
+									]
+								}
+							},
+							"response": []
 						},
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();\r",
-									"pm.environment.set(\"id\",jsonData.bookingid);\r",
-									"\r",
-									"// Validate Status Code\r",
-									"\r",
-									"pm.test(\"Response code is 200\", function(){\r",
-									"    pm.response.to.have.status(200);\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Response message is OK\", function () {\r",
-									"    pm.response.to.have.status(\"OK\");\r",
-									"});\r",
-									"\r",
-									"// Validate Schema\r",
-									"\r",
-									"var schema =\r",
-									"{\r",
-									"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
-									"  \"type\": \"object\",\r",
-									"  \"properties\": {\r",
-									"    \"bookingid\": {\r",
-									"      \"type\": \"integer\"\r",
-									"    },\r",
-									"    \"booking\": {\r",
-									"      \"type\": \"object\",\r",
-									"      \"properties\": {\r",
-									"        \"firstname\": {\r",
-									"          \"type\": \"string\"\r",
-									"        },\r",
-									"        \"lastname\": {\r",
-									"          \"type\": \"string\"\r",
-									"        },\r",
-									"        \"totalprice\": {\r",
-									"          \"type\": \"integer\"\r",
-									"        },\r",
-									"        \"depositpaid\": {\r",
-									"          \"type\": \"boolean\"\r",
-									"        },\r",
-									"        \"bookingdates\": {\r",
-									"          \"type\": \"object\",\r",
-									"          \"properties\": {\r",
-									"            \"checkin\": {\r",
-									"              \"type\": \"string\"\r",
-									"            },\r",
-									"            \"checkout\": {\r",
-									"              \"type\": \"string\"\r",
-									"            }\r",
-									"          },\r",
-									"          \"required\": [\r",
-									"            \"checkin\",\r",
-									"            \"checkout\"\r",
-									"          ]\r",
-									"        },\r",
-									"        \"additionalneeds\": {\r",
-									"          \"type\": \"string\"\r",
-									"        }\r",
-									"      },\r",
-									"      \"required\": [\r",
-									"        \"firstname\",\r",
-									"        \"lastname\",\r",
-									"        \"totalprice\",\r",
-									"        \"depositpaid\",\r",
-									"        \"bookingdates\",\r",
-									"        \"additionalneeds\"\r",
-									"      ]\r",
-									"    }\r",
-									"  },\r",
-									"  \"required\": [\r",
-									"    \"bookingid\",\r",
-									"    \"booking\"\r",
-									"  ]\r",
-									"}\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"// Validate First Name \r",
-									"\r",
-									"pm.test(\"Firstname creation is validated\",function(){\r",
-									"    pm.expect(jsonData.booking.firstname).to.eql(pm.environment.get(\"firstName\"));\r",
-									"});\r",
-									"\r",
-									"\r",
-									"// Validate Last Name\r",
-									"\r",
-									"pm.test(\"Lastname creation is validated\",function(){\r",
-									"    pm.expect(jsonData.booking.lastname).to.eql(pm.environment.get(\"lastName\"));\r",
-									"});\r",
-									"\r",
-									"// Validate Checkin Date\r",
-									"\r",
-									"pm.test(\"Checkin date creation is validated\",function(){\r",
-									"    pm.expect(jsonData.booking.bookingdates.checkin).to.eql(pm.environment.get(\"checkin\"));\r",
-									"});\r",
-									"\r",
-									"// Validate Checkout Date\r",
-									"\r",
-									"pm.test(\"Checkout date creation is validated\",function(){\r",
-									"    pm.expect(jsonData.booking.bookingdates.checkout).to.eql(pm.environment.get(\"checkout\"));\r",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"firstname\" : \"{{firstName}}\",\r\n    \"lastname\" : \"{{lastName}}\",\r\n    \"totalprice\" : 9999,\r\n    \"depositpaid\" : false,\r\n    \"bookingdates\" : {\r\n        \"checkin\" : \"{{checkin}}\",\r\n        \"checkout\" : \"{{checkout}}\"\r\n    },\r\n    \"additionalneeds\" : \"Snacks\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"name": "CreateBooking_with_invalidData",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"pm.environment.set(\"id\", jsonData.bookingid);\r",
+											"\r",
+											"// Validate Schema\r",
+											"\r",
+											"var schema =\r",
+											"{\r",
+											"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+											"  \"type\": \"object\",\r",
+											"  \"properties\": {\r",
+											"    \"bookingid\": {\r",
+											"      \"type\": \"integer\"\r",
+											"    },\r",
+											"    \"booking\": {\r",
+											"      \"type\": \"object\",\r",
+											"      \"properties\": {\r",
+											"        \"firstname\": {\r",
+											"          \"type\": \"string\"\r",
+											"        },\r",
+											"        \"lastname\": {\r",
+											"          \"type\": \"string\"\r",
+											"        },\r",
+											"        \"totalprice\": {\r",
+											"          \"type\": \"integer\"\r",
+											"        },\r",
+											"        \"depositpaid\": {\r",
+											"          \"type\": \"boolean\"\r",
+											"        },\r",
+											"        \"bookingdates\": {\r",
+											"          \"type\": \"object\",\r",
+											"          \"properties\": {\r",
+											"            \"checkin\": {\r",
+											"              \"type\": \"string\"\r",
+											"            },\r",
+											"            \"checkout\": {\r",
+											"              \"type\": \"string\"\r",
+											"            }\r",
+											"          },\r",
+											"          \"required\": [\r",
+											"            \"checkin\",\r",
+											"            \"checkout\"\r",
+											"          ]\r",
+											"        },\r",
+											"        \"additionalneeds\": {\r",
+											"          \"type\": \"string\"\r",
+											"        }\r",
+											"      },\r",
+											"      \"required\": [\r",
+											"        \"firstname\",\r",
+											"        \"lastname\",\r",
+											"        \"totalprice\",\r",
+											"        \"depositpaid\",\r",
+											"        \"bookingdates\",\r",
+											"        \"additionalneeds\"\r",
+											"      ]\r",
+											"    }\r",
+											"  },\r",
+											"  \"required\": [\r",
+											"    \"bookingid\",\r",
+											"    \"booking\"\r",
+											"  ]\r",
+											"}\r",
+											"\r",
+											"pm.test('Schema is valid', function() {\r",
+											"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+											"});\r",
+											"\r",
+											"\r",
+											"// Validate Checkin date \r",
+											"\r",
+											"var checkin_response = new Date(jsonData.booking.bookingdates.checkin)\r",
+											"console.log(checkin_response)\r",
+											"var checkin_year = checkin_response.getFullYear()\r",
+											"var checkin_month = checkin_response.getMonth() + 1\r",
+											"var checkin_day = checkin_response.getDate()\r",
+											"console.log(\"year : \" + checkin_year + \" month: \" + checkin_month + \" day: \" + checkin_day)\r",
+											"// console.log(pm.iterationData.get(\"Iteration_No\") + \" \" + pm.iterationData.get(\"Remarks\"))\r",
+											"\r",
+											"pm.test(\"Checkin date is present in correct format\", function () {\r",
+											"    pm.expect(checkin_response.toISOString().split('T')[0]).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);\r",
+											"    pm.expect(checkin_year).to.be.within(2001, 2022);\r",
+											"    pm.expect(checkin_month).to.be.within(1, 12);\r",
+											"    if (checkin_month == 2) {\r",
+											"        pm.expect(checkin_day).to.be.within(1, 29);\r",
+											"    }\r",
+											"    else if (checkin_month in [1, 3, 5, 7, 8, 10, 12]) {\r",
+											"        pm.expect(checkin_day).to.be.within(1, 31);\r",
+											"    }\r",
+											"    else {\r",
+											"        pm.expect(checkin_day).to.be.within(1, 30);\r",
+											"    }\r",
+											"    pm.expect(Number(pm.iterationData.get(\"Checkin\").split('-')[0])).to.eql(checkin_year)\r",
+											"});\r",
+											"\r",
+											"\r",
+											"// Validate Checkout date\r",
+											"\r",
+											"var checkout_response = new Date(jsonData.booking.bookingdates.checkout)\r",
+											"//console.log(checkout_response)\r",
+											"var checkout_year = checkout_response.getFullYear()\r",
+											"var checkout_month = checkout_response.getMonth() + 1\r",
+											"var checkout_day = checkout_response.getDate()\r",
+											"console.log(\"year : \" + checkout_year + \" month: \" + checkout_month + \" day: \" + checkout_day)\r",
+											"// console.log(pm.iterationData.get(\"Iteration_No\") + \" \" + pm.iterationData.get(\"Remarks\"))\r",
+											"\r",
+											"pm.test(\"Checkout date is present in correct format\", function () {\r",
+											"    pm.expect(checkout_response.toISOString().split('T')[0]).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);\r",
+											"    pm.expect(checkout_year).to.be.within(2001, 2022);\r",
+											"    pm.expect(checkout_month).to.be.within(1, 12);\r",
+											"    if (checkout_month == 2) {\r",
+											"        pm.expect(checkout_day).to.be.within(1, 29);\r",
+											"    }\r",
+											"    else if (checkout_month in [1, 3, 5, 7, 8, 10, 12]) {\r",
+											"        pm.expect(checkout_day).to.be.within(1, 31);\r",
+											"    }\r",
+											"    else {\r",
+											"        pm.expect(checkout_day).to.be.within(1, 30);\r",
+											"    }\r",
+											"    pm.expect(Number(pm.iterationData.get(\"Checkout\").split('-')[0])).to.eql(checkout_year)\r",
+											"});\r",
+											"\r",
+											"\r",
+											"pm.test(\"Checkin before Checkout\", function () {\r",
+											"    pm.expect(checkout_response).to.greaterThan(checkin_response)\r",
+											"});\r",
+											"\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/booking",
-							"host": [
-								"{{baseUrl}}"
 							],
-							"path": [
-								"booking"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CreateBooking_XML",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"content-type": true,
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "text/xml",
-								"type": "text"
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
 							},
-							{
-								"key": "Accept",
-								"value": "application/xml",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "<booking>\r\n    <firstname>Monica</firstname>\r\n    <lastname>Geller</lastname>\r\n    <totalprice>111</totalprice>\r\n    <depositpaid>true</depositpaid>\r\n    <bookingdates>\r\n      <checkin>2018-01-01</checkin>\r\n      <checkout>2019-01-01</checkout>\r\n    </bookingdates>\r\n    <additionalneeds>Breakfast</additionalneeds>\r\n  </booking>",
-							"options": {
-								"raw": {
-									"language": "xml"
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"firstname\" : \"abcd\",\r\n    \"lastname\" : \",.#@$%\",\r\n    \"totalprice\" : \"abcd\",\r\n    \"depositpaid\" : \"abcd\",\r\n    \"bookingdates\" : {\r\n        \"checkin\" : \"{{Checkin}}\",  // value from .csv\r\n        \"checkout\" : \"{{Checkout}}\"  // value from .csv\r\n    },\r\n    \"additionalneeds\" : \"+-*/\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking"
+									]
 								}
-							}
-						},
-						"url": {
-							"raw": "baseUrl/booking",
-							"host": [
-								"baseUrl"
-							],
-							"path": [
-								"booking"
-							]
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
-					"name": "UpdateBooking_JSON",
-					"event": [
+					"name": "UpdateBooking",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test(\"Firstname update validation\",function(){\r",
-									"    pm.expect(jsonData.firstname).to.eql(\"Monica\");\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Lastname update validation\",function(){\r",
-									"    pm.expect(jsonData.firstname).to.eql(\"Geller\");\r",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Cookie",
-								"value": "token={{token}}",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n        \"firstname\": \"Monica\",\r\n        \"lastname\": \"Geller\",\r\n        \"totalprice\": 1000,\r\n        \"depositpaid\": true,\r\n        \"bookingdates\": {\r\n            \"checkin\": \"2023-01-01\",\r\n            \"checkout\": \"2023-01-03\"\r\n        },\r\n        \"additionalneeds\": \"None\"\r\n    }\r\n\r\n"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/booking/{{id}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"booking",
-								"{{id}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "UpdateBooking_XML",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"content-type": true,
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
-								"type": "text"
-							},
-							{
-								"key": "Content-Type",
-								"value": "text/xml",
-								"type": "text"
-							},
-							{
-								"key": "Accept",
-								"value": "application/xml",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "<booking>\r\n    <firstname>Jim</firstname>\r\n    <lastname>Carrey</lastname>\r\n    <totalprice>111</totalprice>\r\n    <depositpaid>true</depositpaid>\r\n    <bookingdates>\r\n      <checkin>2018-01-01</checkin>\r\n      <checkout>2019-01-01</checkout>\r\n    </bookingdates>\r\n    <additionalneeds>Breakfast</additionalneeds>\r\n  </booking>",
-							"options": {
-								"raw": {
-									"language": "xml"
+							"name": "UpdateBooking_allFields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Firstname update validation\",function(){\r",
+											"    pm.expect(jsonData.firstname).to.eql(\"Chandler\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Lastname update validation\",function(){\r",
+											"    pm.expect(jsonData.lastname).to.eql(\"Bing\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Total Price update validation\",function(){\r",
+											"    pm.expect(jsonData.totalprice).to.eql(500);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Depositpaid update validation\",function(){\r",
+											"    pm.expect(jsonData.depositpaid).to.eql(false);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Checkin date update validation\",function(){\r",
+											"    pm.expect(jsonData.bookingdates.checkin).to.eql(\"2023-01-01\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Checkout date update validation\",function(){\r",
+											"    pm.expect(jsonData.bookingdates.checkout).to.eql(\"2023-01-03\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Additionalneeds update validation\",function(){\r",
+											"    pm.expect(jsonData.additionalneeds).to.eql(\"None\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/booking/3185",
-							"host": [
-								"{{baseUrl}}"
 							],
-							"path": [
-								"booking",
-								"3185"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "PartialUpdateBooking_JSON",
-					"event": [
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n        \"firstname\": \"Chandler\",\r\n        \"lastname\": \"Bing\",\r\n        \"totalprice\": 500,\r\n        \"depositpaid\": false,\r\n        \"bookingdates\": {\r\n            \"checkin\": \"2023-01-01\",\r\n            \"checkout\": \"2023-01-03\"\r\n        },\r\n        \"additionalneeds\": \"None\"\r\n    }\r\n\r\n"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test(\"Firstname partial update validation\", function(){\r",
-									"    pm.expect(jsonData.firstname).to.eql(\"Monica\");\r",
-									"})"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Cookie",
-								"value": "token={{token}}",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"lastname\" : \"Bing\",\r\n    \"bookingdates.checkout\" : \"2023-01-05\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"name": "UpdateBooking_withInvalidData",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"var schema =\r",
+											"{\r",
+											"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+											"  \"type\": \"object\",\r",
+											"  \"properties\": {\r",
+											"    \"bookingid\": {\r",
+											"      \"type\": \"integer\"\r",
+											"    },\r",
+											"    \"booking\": {\r",
+											"      \"type\": \"object\",\r",
+											"      \"properties\": {\r",
+											"        \"firstname\": {\r",
+											"          \"type\": \"string\"\r",
+											"        },\r",
+											"        \"lastname\": {\r",
+											"          \"type\": \"string\"\r",
+											"        },\r",
+											"        \"totalprice\": {\r",
+											"          \"type\": \"integer\"\r",
+											"        },\r",
+											"        \"depositpaid\": {\r",
+											"          \"type\": \"boolean\"\r",
+											"        },\r",
+											"        \"bookingdates\": {\r",
+											"          \"type\": \"object\",\r",
+											"          \"properties\": {\r",
+											"            \"checkin\": {\r",
+											"              \"type\": \"string\"\r",
+											"            },\r",
+											"            \"checkout\": {\r",
+											"              \"type\": \"string\"\r",
+											"            }\r",
+											"          },\r",
+											"          \"required\": [\r",
+											"            \"checkin\",\r",
+											"            \"checkout\"\r",
+											"          ]\r",
+											"        },\r",
+											"        \"additionalneeds\": {\r",
+											"          \"type\": \"string\"\r",
+											"        }\r",
+											"      },\r",
+											"      \"required\": [\r",
+											"        \"firstname\",\r",
+											"        \"lastname\",\r",
+											"        \"totalprice\",\r",
+											"        \"depositpaid\",\r",
+											"        \"bookingdates\",\r",
+											"        \"additionalneeds\"\r",
+											"      ]\r",
+											"    }\r",
+											"  },\r",
+											"  \"required\": [\r",
+											"    \"bookingid\",\r",
+											"    \"booking\"\r",
+											"  ]\r",
+											"}\r",
+											"\r",
+											"pm.test('Schema is valid', function() {\r",
+											"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/booking/{{id}}",
-							"host": [
-								"{{baseUrl}}"
 							],
-							"path": [
-								"booking",
-								"{{id}}"
-							]
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n        \"firstname\": \"1234\",\r\n        \"lastname\": \"@#$%\",\r\n        \"totalprice\": \"abc\",\r\n        \"depositpaid\": 123,\r\n        \"bookingdates\": {\r\n            \"checkin\": \"2026-123-40\",\r\n            \"checkout\": \"1-0-0\"\r\n        },\r\n        \"additionalneeds\": \"/*-+\"\r\n    }\r\n\r\n"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "UpdateBooking_partial",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Test cases should fail \r",
+											"\r",
+											"// Validate Response Code \r",
+											"\r",
+											"pm.test(\"Response code is 200\", function(){\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Validate Response Message\r",
+											"\r",
+											"pm.test(\"Response message is OK\", function () {\r",
+											"    pm.response.to.have.status(\"OK\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n        \"firstname\": \"Phoebe\",\r\n        \"bookingdates\": {\r\n            \"checkin\": \"2023-03-05\",\r\n            \"checkout\": \"2026-04-10\"\r\n        },\r\n        \"additionalneeds\": \"Pla!\"\r\n    }\r\n\r\n"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
-					"name": "PartialUpdateBooking_XML",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept": true,
-							"content-type": true
-						}
-					},
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
-								"type": "text"
-							},
-							{
-								"key": "Accept",
-								"value": "application/xml",
-								"type": "text"
-							},
-							{
-								"key": "Content-Type",
-								"value": "text/xml",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "<booking>\r\n    <bookingdates>\r\n      <checkin>2023-01-01</checkin>\r\n      <checkout>2023-01-10</checkout>\r\n    </bookingdates>\r\n</booking>",
-							"options": {
-								"raw": {
-									"language": "xml"
+					"name": "PartialUpdateBooking",
+					"item": [
+						{
+							"name": "PartialUpdateBooking_someFields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Validate updating lastname\", function(){\r",
+											"    pm.expect(jsonData.lastname).to.eql(\"Buffay\");\r",
+											"})\r",
+											"\r",
+											"pm.test(\"Validate updating checkout date\", function(){\r",
+											"    pm.expect(jsonData.bookingdates.checkout).to.eql(\"2023-01-05\");\r",
+											"})"
+										],
+										"type": "text/javascript"
+									}
 								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/booking/551",
-							"host": [
-								"{{baseUrl}}"
 							],
-							"path": [
-								"booking",
-								"551"
-							]
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lastname\" : \"Buffay\",\r\n    \"bookingdates.checkout\" : \"2023-01-05\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "PartialUpdateBooking_allFields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Firstname update validation\",function(){\r",
+											"    pm.expect(jsonData.firstname).to.eql(\"Chandler\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Lastname update validation\",function(){\r",
+											"    pm.expect(jsonData.lastname).to.eql(\"Bing\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Total Price update validation\",function(){\r",
+											"    pm.expect(jsonData.totalprice).to.eql(500);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Depositpaid update validation\",function(){\r",
+											"    pm.expect(jsonData.depositpaid).to.eql(false);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Checkin date update validation\",function(){\r",
+											"    pm.expect(jsonData.bookingdates.checkin).to.eql(\"2023-01-01\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Checkout date update validation\",function(){\r",
+											"    pm.expect(jsonData.bookingdates.checkout).to.eql(\"2023-01-03\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Additionalneeds update validation\",function(){\r",
+											"    pm.expect(jsonData.additionalneeds).to.eql(\"None\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n        \"firstname\": \"Chandler\",\r\n        \"lastname\": \"Bing\",\r\n        \"totalprice\": 500,\r\n        \"depositpaid\": false,\r\n        \"bookingdates\": {\r\n            \"checkin\": \"2023-01-01\",\r\n            \"checkout\": \"2023-01-03\"\r\n        },\r\n        \"additionalneeds\": \"None\"\r\n    }\r\n\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "PartialUpdateBooking_withInvalidData",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"// Validate last name \r",
+											"\r",
+											"pm.test(\"Last name is a valid string.\", function(){\r",
+											"    var namePattern = /^[A-Za-z]+$/\r",
+											"    pm.expect(RegExp(namePattern).test(jsonData.lastname)).to.be.true;\r",
+											"})\r",
+											"\r",
+											"//Validate Checkout date \r",
+											"\r",
+											"var checkout_response = new Date(jsonData.bookingdates.checkout)\r",
+											"//console.log(checkout_response)\r",
+											"var checkout_year = checkout_response.getFullYear()\r",
+											"var checkout_month = checkout_response.getMonth() + 1\r",
+											"var checkout_day = checkout_response.getDate()\r",
+											"console.log(\"year : \" + checkout_year + \" month: \" + checkout_month + \" day: \" + checkout_day)\r",
+											"// console.log(pm.iterationData.get(\"Iteration_No\") + \" \" + pm.iterationData.get(\"Remarks\"))\r",
+											"\r",
+											"pm.test(\"Checkout date is present in correct format\", function () {\r",
+											"    pm.expect(checkout_response.toISOString().split('T')[0]).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);\r",
+											"    pm.expect(checkout_year).to.be.within(2001, 2022);\r",
+											"    pm.expect(checkout_month).to.be.within(1, 12);\r",
+											"    if (checkout_month == 2) {\r",
+											"        pm.expect(checkout_day).to.be.within(1, 29);\r",
+											"    }\r",
+											"    else if (checkout_month in [1, 3, 5, 7, 8, 10, 12]) {\r",
+											"        pm.expect(checkout_day).to.be.within(1, 31);\r",
+											"    }\r",
+											"    else {\r",
+											"        pm.expect(checkout_day).to.be.within(1, 30);\r",
+											"    }\r",
+											"    pm.expect(Number(pm.iterationData.get(\"Checkout\").split('-')[0])).to.eql(checkout_year)\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept": true
+								}
+							},
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"lastname\" : \"/*-+\",\r\n    \"bookingdates.checkout\" : \"9999-123-00\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
 					"name": "DeleteBooking",
-					"event": [
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Deletion validation\", function () {\r",
-									"    pm.response.to.have.status(201);\r",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Cookie",
-								"value": "token={{token}}",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/booking/{{id}}",
-							"host": [
-								"{{baseUrl}}"
+							"name": "DeleteBooking_emptyID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response code is validated\", function () {\r",
+											"    pm.response.to.have.status(404);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response message is validated\", function () {\r",
+											"    pm.expect(pm.response.text()).to.eql(\"Not Found\");\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
 							],
-							"path": [
-								"booking",
-								"{{id}}"
-							]
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/booking/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteBooking_invalidID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response code is validated\", function () {\r",
+											"    pm.response.to.have.status(405);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response message is validated\", function () {\r",
+											"    pm.expect(pm.response.text()).to.eql(\"Method Not Allowed\");\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/booking/abcd",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"abcd"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteBooking_envID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response code is validated\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response message is validated\", function () {\r",
+											"    pm.expect(pm.response.text()).to.eql(\"Created\");\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteBooking_twice",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response code is validated\", function () {\r",
+											"    pm.response.to.have.status(405);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response message is validated\", function () {\r",
+											"    pm.expect(pm.response.text()).to.eql(\"Method Not Allowed\");\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "token={{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46cGFzc3dvcmQxMjM=",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/booking/{{id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"booking",
+										"{{id}}"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				}
 			]
 		},
@@ -843,6 +2111,23 @@
 			"item": [
 				{
 					"name": "HealthCheck",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response code is validated\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response message is validated\", function () {\r",
+									"    pm.expect(pm.response.text()).to.eql(\"Created\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -853,366 +2138,6 @@
 							],
 							"path": [
 								"ping"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Curl",
-			"item": [
-				{
-					"name": "Auth",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"username\" : \"admin\",\n    \"password\" : \"password123\"\n}"
-						},
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/auth",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"auth"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetBookingIds_All_id",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetBookingIds_Filter_by_Name",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking?firstname=Monica",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking"
-							],
-							"query": [
-								{
-									"key": "firstname",
-									"value": "Monica"
-								},
-								{
-									"key": "lastname",
-									"value": "Geller",
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetBookingIds_Filter_by_BookingDate",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking?checkin=2014-03-13&checkout=2014-05-21",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking"
-							],
-							"query": [
-								{
-									"key": "checkin",
-									"value": "2014-03-13"
-								},
-								{
-									"key": "checkout",
-									"value": "2014-05-21"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetBooking",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking/6018",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking",
-								"6018"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CreateBooking_JSON_curl",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"firstname\" : \"Jim\",\n    \"lastname\" : \"Brown\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}"
-						},
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CreateBooking_XML_curl",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept": true
-						}
-					},
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "text/xml"
-							},
-							{
-								"key": "Accept",
-								"value": "application/xml",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "<booking>\n    <firstname>Jim</firstname>\n    <lastname>Brown</lastname>\n    <totalprice>111</totalprice>\n    <depositpaid>true</depositpaid>\n    <bookingdates>\n      <checkin>2018-01-01</checkin>\n      <checkout>2019-01-01</checkout>\n    </bookingdates>\n    <additionalneeds>Breakfast</additionalneeds>\n  </booking>"
-						},
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CreateBooking_URLencoded",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "firstname",
-									"value": "Jim",
-									"type": "text"
-								},
-								{
-									"key": "lastname",
-									"value": "Brown",
-									"type": "text"
-								},
-								{
-									"key": "totalprice",
-									"value": "111",
-									"type": "text"
-								},
-								{
-									"key": "depositpaid",
-									"value": "true",
-									"type": "text"
-								},
-								{
-									"key": "bookingdates[checkin]",
-									"value": "2018-01-01",
-									"type": "text"
-								},
-								{
-									"key": "bookingdates[checkout]",
-									"value": "2018-01-02",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "HealthCheck_curl",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/ping",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"ping"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "UpdateBooking_JSON",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
-							{
-								"key": "Cookie",
-								"value": "token=c7be708fbceb65a"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"firstname\" : \"Phoebe\",\n    \"lastname\" : \"Buffay\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}"
-						},
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking/846",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking",
-								"846"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "UpdateBooking_XML",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "text/xml"
-							},
-							{
-								"key": "Accept",
-								"value": "application/xml"
-							},
-							{
-								"key": "Authorization",
-								"value": "Basic YWRtaW46cGFzc3dvcmQxMjM="
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "<booking>\n    <firstname>James</firstname>\n    <lastname>Brown</lastname>\n    <totalprice>111</totalprice>\n    <depositpaid>true</depositpaid>\n    <bookingdates>\n      <checkin>2018-01-01</checkin>\n      <checkout>2019-01-01</checkout>\n    </bookingdates>\n    <additionalneeds>Breakfast</additionalneeds>\n  </booking>"
-						},
-						"url": {
-							"raw": "https://restful-booker.herokuapp.com/booking/846",
-							"protocol": "https",
-							"host": [
-								"restful-booker",
-								"herokuapp",
-								"com"
-							],
-							"path": [
-								"booking",
-								"846"
 							]
 						}
 					},
